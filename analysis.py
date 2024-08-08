@@ -30,43 +30,60 @@ df['Quantity'] = pd.to_numeric(df['Quantity'], errors='coerce')
 df['UnitPrice'] = pd.to_numeric(df['UnitPrice'], errors='coerce')
 df['TotalPrice'] = pd.to_numeric(df['TotalPrice'], errors='coerce')
 
-# Basic Analysis Examples:
-
-# 1. Summary Statistics
-summary_stats = df.describe()
-print("Summary Statistics:\n", summary_stats)
+# 1. TOTAL NUMBER OF RECORDS : 
+total_entries = df.shape
+print("Total Number of Records : ",total_entries[0])
 print("\n")
 
-# 2. Count of unique values in a specific column 
-unique_counts = df['ProductName'].value_counts()
-print("Unique ProductName Counts:\n", unique_counts)
+# 2. TOTAL NUMBER OF CUSTOMERS : 
+total_customer_counts = df['CustomerID'].nunique()
+print("Total No. of Customer : ",total_customer_counts)
 print("\n")
 
-# 3. Grouping and Aggregation
-grouped_data = df.groupby('ProductName')['Quantity'].sum()
-print("Grouped Data by ProductName:\n", grouped_data)
+# 3. TOTAL NUMBER OF PRODUCTS :
+total_product_counts = df['ProductName'].nunique()
+print("Total No. of Products : ",total_product_counts)
 print("\n")
 
-# 4. Filtering Data
-filtered_data = df[df['UnitPrice'] > 100]
-print("Filtered Data where UnitPrice > 100:\n", filtered_data)
+# 4. EACH PRODUCT WISE TOTAL ENTRIES :
+product_wise_entries = df['ProductName'].value_counts()
+print("EACH PRODUCT WISE COUNTS : \n ", product_wise_entries)
 print("\n")
 
-# 5. Correlation Matrix
-numeric_df = df[['Quantity', 'UnitPrice', 'TotalPrice']] 
-correlation_matrix = numeric_df.corr()
-print("Correlation Matrix:\n", correlation_matrix)
+# 5. PAYMENT OPTIONS AVAILABLE :
+available_payment_options = df['PaymentMethod'].nunique()
+print("Available Payment options : ",available_payment_options)
 print("\n")
 
-# 6. Custom Analysis (e.g., calculating a new metric)
-df['Revenue'] = df['UnitPrice'] * df['Quantity']
-print("Data with Revenue Calculated:\n", df[['ProductName', 'UnitPrice', 'Quantity', 'Revenue']])
+# 6. EACH PAYMENT OPTIONS UTILISED COUNT : 
+each_payment_options_used = df['PaymentMethod'].value_counts()
+print("Each Payment Options utilised count : \n", each_payment_options_used)
 print("\n")
 
-# 7. Export the analysis back to Google Sheets (optional)
-summary_sheet = spreadsheet.add_worksheet(title="SummaryStats_2", rows="100", cols="20")
-summary_sheet.update([summary_stats.columns.values.tolist()] + summary_stats.values.tolist())
+# 7. SUM OF TOTAL SALES :
+total_sales = df['TotalPrice'].sum()
+print("Sum of Total sales : ", total_sales)
+print("\n")
 
-print("Analysis complete and results exported to Google Sheets!")
+# 8. TOTAL QUANTITIES SOLD : 
+total_quantities_sold = df['Quantity'].sum()
+print("Total Quantities sold :",total_quantities_sold)
+print("\n")
 
+# 9. DAY WISE TOTAL SALES :
+df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+df = df.dropna(subset=['Date'])
+df['Date'] = df['Date'].dt.date
+day_wise_total_price = df.groupby('Date')['TotalPrice'].sum().reset_index()
+day_wise_total_price.columns = ['Date', 'TotalPrice']
+print("Day wise total Price : \n")
+print(day_wise_total_price)
 
+# 10. DAY WITH THE HIGHEST AND LEAST SALE :
+day_with_highest_sale = day_wise_total_price.loc[day_wise_total_price['TotalPrice'].idxmax()]
+
+day_with_least_sale = day_wise_total_price.loc[day_wise_total_price['TotalPrice'].idxmin()]
+
+print("Day with the highest sale with sale amount :\n", day_with_highest_sale)
+print("\n")
+print("Day with the least sale with sale amount :\n", day_with_least_sale)
