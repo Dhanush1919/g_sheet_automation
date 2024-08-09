@@ -1,16 +1,27 @@
 import gspread
 import pandas as pd
 from google.oauth2.service_account import Credentials
+from googleapiclient.discovery import build
+
+# Scopes required to access Google Docs
+SCOPES = ['https://www.googleapis.com/auth/documents', 'https://www.googleapis.com/auth/drive']
 
 # Path to your service account credentials JSON file
 SERVICE_ACCOUNT_FILE = '/home/nineleaps/Documents/Python_Gsheet_automation/credentials.json'
 
-# Scopes required to access Google Sheets
-SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
+# Scopes required to access Google Sheets and Google Docs
+SCOPES = [
+    'https://www.googleapis.com/auth/spreadsheets',
+    'https://www.googleapis.com/auth/drive',
+    'https://www.googleapis.com/auth/documents'
+]
 
 # Authenticate using the service account
 creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
 client = gspread.authorize(creds)
+
+# Google Docs API client
+docs_service = build('docs', 'v1', credentials=creds)
 
 # ID of the spreadsheet containing the merged data
 spreadsheet_id = '1E7tZ6MuhiA4bFfGZLCcCemdoslqLTicFlvTmRQVDowM'
@@ -30,60 +41,78 @@ df['Quantity'] = pd.to_numeric(df['Quantity'], errors='coerce')
 df['UnitPrice'] = pd.to_numeric(df['UnitPrice'], errors='coerce')
 df['TotalPrice'] = pd.to_numeric(df['TotalPrice'], errors='coerce')
 
-# 1. TOTAL NUMBER OF RECORDS : 
-total_entries = df.shape
-print("Total Number of Records : ",total_entries[0])
-print("\n")
+# Analysis results
+results = []
 
-# 2. TOTAL NUMBER OF CUSTOMERS : 
+# 1. TOTAL NUMBER OF RECORDS
+total_entries = df.shape[0]
+results.append(f"Total Number of Records: {total_entries}\n")
+
+# 2. TOTAL NUMBER OF CUSTOMERS
 total_customer_counts = df['CustomerID'].nunique()
-print("Total No. of Customer : ",total_customer_counts)
-print("\n")
+results.append(f"Total Number of Customers: {total_customer_counts}\n")
 
-# 3. TOTAL NUMBER OF PRODUCTS :
+# 3. TOTAL NUMBER OF PRODUCTS
 total_product_counts = df['ProductName'].nunique()
-print("Total No. of Products : ",total_product_counts)
-print("\n")
+results.append(f"Total Number of Products: {total_product_counts}\n")
 
-# 4. EACH PRODUCT WISE TOTAL ENTRIES :
+# 4. EACH PRODUCT WISE TOTAL ENTRIES
 product_wise_entries = df['ProductName'].value_counts()
-print("EACH PRODUCT WISE COUNTS : \n ", product_wise_entries)
-print("\n")
+results.append("Each Product Wise Counts:\n")
+results.append(product_wise_entries.to_string() + "\n\n")
 
-# 5. PAYMENT OPTIONS AVAILABLE :
+# 5. PAYMENT OPTIONS AVAILABLE
 available_payment_options = df['PaymentMethod'].nunique()
-print("Available Payment options : ",available_payment_options)
-print("\n")
+results.append(f"Available Payment Options: {available_payment_options}\n")
 
-# 6. EACH PAYMENT OPTIONS UTILISED COUNT : 
+# 6. EACH PAYMENT OPTIONS UTILISED COUNT
 each_payment_options_used = df['PaymentMethod'].value_counts()
-print("Each Payment Options utilised count : \n", each_payment_options_used)
-print("\n")
+results.append("Each Payment Option Utilized Count:\n")
+results.append(each_payment_options_used.to_string() + "\n\n")
 
-# 7. SUM OF TOTAL SALES :
+# 7. SUM OF TOTAL SALES
 total_sales = df['TotalPrice'].sum()
-print("Sum of Total sales : ", total_sales)
-print("\n")
+results.append(f"Sum of Total Sales: {total_sales}\n")
 
-# 8. TOTAL QUANTITIES SOLD : 
+# 8. TOTAL QUANTITIES SOLD
 total_quantities_sold = df['Quantity'].sum()
-print("Total Quantities sold :",total_quantities_sold)
-print("\n")
+results.append(f"Total Quantities Sold: {total_quantities_sold}\n")
 
-# 9. DAY WISE TOTAL SALES :
+# 9. DAY WISE TOTAL SALES
 df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
 df = df.dropna(subset=['Date'])
 df['Date'] = df['Date'].dt.date
 day_wise_total_price = df.groupby('Date')['TotalPrice'].sum().reset_index()
 day_wise_total_price.columns = ['Date', 'TotalPrice']
-print("Day wise total Price : \n")
-print(day_wise_total_price)
+results.append("Day Wise Total Price:\n")
+results.append(day_wise_total_price.to_string(index=False) + "\n\n")
 
-# 10. DAY WITH THE HIGHEST AND LEAST SALE :
+# 10. DAY WITH THE HIGHEST AND LEAST SALE
 day_with_highest_sale = day_wise_total_price.loc[day_wise_total_price['TotalPrice'].idxmax()]
-
 day_with_least_sale = day_wise_total_price.loc[day_wise_total_price['TotalPrice'].idxmin()]
+results.append(f"Day with the Highest Sale:\n{day_with_highest_sale}\n\n")
+results.append(f"Day with the Least Sale:\n{day_with_least_sale}\n")
 
-print("Day with the highest sale with sale amount :\n", day_with_highest_sale)
-print("\n")
-print("Day with the least sale with sale amount :\n", day_with_least_sale)
+# Create a new Google Doc and write the analysis results
+doc = docs_service.documents().create(body={"title": "Data Analysis Summary"}).execute()
+doc_id = doc['documentId']
+print(f"Created document with ID: {doc_id}")
+
+# Prepare the content to be inserted into the Google Doc
+requests = [
+    {
+        'insertText': {
+            'location': {
+                'index': 1,
+            },
+            'text': ''.join(results)
+        }
+    }
+]
+
+# Execute the request to write the content to the Google Doc
+docs_service.documents().batchUpdate(documentId=doc_id, body={'requests': requests}).execute()
+
+print(f"Analysis complete and results exported to Google Doc: {doc['title']}")
+
+print("Document updated successfully.")
