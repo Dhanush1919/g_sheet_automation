@@ -12,7 +12,7 @@ creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPE
 client = gspread.authorize(creds)
 
 # ID of the spreadsheet containing the subsheets
-spreadsheet_id = '1E7tZ6MuhiA4bFfGZLCcCemdoslqLTicFlvTmRQVDowM'  # Replace with your spreadsheet ID
+spreadsheet_id = '1E7tZ6MuhiA4bFfGZLCcCemdoslqLTicFlvTmRQVDowM'
 
 # Names of the subsheets to merge
 sheet_names = [
@@ -22,7 +22,7 @@ sheet_names = [
 ]
 
 # Name of the destination sheet (within the same spreadsheet)
-destination_sheet_name = 'MergedSheet'  # Replace with your desired destination sheet name
+destination_sheet_name = 'MergedSheet' 
 
 # Access the spreadsheet
 spreadsheet = client.open_by_key(spreadsheet_id)
@@ -51,7 +51,7 @@ for sheet_name in sheet_names:
     
     # Determine the range in the destination sheet to paste the data
     end_row = start_row + len(source_data) - 1
-    cell_range = f'A{start_row}'  # Adjust this based on your data width
+    cell_range = f'A{start_row}'
     
     # Update the data in the destination sheet
     destination_sheet.update(cell_range, source_data)
@@ -60,3 +60,4 @@ for sheet_name in sheet_names:
     start_row = end_row + 1
 
 print('Data successfully merged into the destination sheet!')
+

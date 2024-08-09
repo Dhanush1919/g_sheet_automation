@@ -128,7 +128,7 @@ SCOPES = ['https://www.googleapis.com/auth/drive']
 creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
 drive_service = build('drive', 'v3', credentials=creds)
 
-# Share the document with your email
+# SHARING THE DOCUMENT WITH MAIL :
 user_permission = {
     'type': 'user',
     'role': 'reader',
