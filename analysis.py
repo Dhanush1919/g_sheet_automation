@@ -33,7 +33,7 @@ sheet = spreadsheet.worksheet(merged_sheet_name)
 
 # Load the data into a pandas DataFrame
 data = sheet.get_all_values()
-headers = data.pop(0)  # Assuming the first row contains column headers
+headers = data.pop(0) 
 df = pd.DataFrame(data, columns=headers)
 
 # Convert relevant columns to numeric types (e.g., Quantity, UnitPrice, TotalPrice)
@@ -97,6 +97,7 @@ results.append(f"Day with the Least Sale:\n{day_with_least_sale}\n")
 doc = docs_service.documents().create(body={"title": "Data Analysis Summary"}).execute()
 doc_id = doc['documentId']
 print(f"Created document with ID: {doc_id}")
+print(f"Document URL : https://docs.google.com/document/d/{doc_id}/edit")
 
 # Prepare the content to be inserted into the Google Doc
 requests = [
@@ -116,3 +117,28 @@ docs_service.documents().batchUpdate(documentId=doc_id, body={'requests': reques
 print(f"Analysis complete and results exported to Google Doc: {doc['title']}")
 
 print("Document updated successfully.")
+
+
+### PROVIDING ACCESS TO THE DOCUMENT :
+
+# Scopes required to access Google Drive
+SCOPES = ['https://www.googleapis.com/auth/drive']
+
+# Authenticate using the service account
+creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+drive_service = build('drive', 'v3', credentials=creds)
+
+# Share the document with your email
+user_permission = {
+    'type': 'user',
+    'role': 'reader',
+    'emailAddress': 'dhanush.venkataraman@nineleaps.com' 
+}
+
+drive_service.permissions().create(
+    fileId=doc_id,
+    body=user_permission,
+    fields='id'
+).execute()
+
+print("Document shared successfully.")
